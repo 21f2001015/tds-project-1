@@ -35,12 +35,12 @@ def fetch_users(city="Barcelona", min_followers=100):
             # Extract required fields
             users.append({
                 'login': user_data['login'],
-                'name': user_data['name'],
-                'company': clean_company_name(user_data['company']),
-                'location': user_data['location'],
-                'email': user_data['email'],
-                'hireable': user_data['hireable'],
-                'bio': user_data['bio'],
+                'name': user_data['name'] or '',
+                'company': clean_company_name(user_data['company']) or '',
+                'location': user_data['location'] or '',
+                'email': user_data['email'] or '',
+                'hireable': user_data['hireable'] or False,
+                'bio': user_data['bio'] or '',
                 'public_repos': user_data['public_repos'],
                 'followers': user_data['followers'],
                 'following': user_data['following'],
@@ -72,10 +72,10 @@ def fetch_repositories(user_login):
                 'created_at': repo['created_at'],
                 'stargazers_count': repo['stargazers_count'],
                 'watchers_count': repo['watchers_count'],
-                'language': repo['language'],
+                'language': repo['language'] or '',
                 'has_projects': repo['has_projects'],
                 'has_wiki': repo['has_wiki'],
-                'license_name': repo['license']['key'] if repo['license'] else None,
+                'license_name': repo['license']['key'] if repo['license'] else '',
             })
 
         # If fewer than 100 repositories are returned, it means we're on the last page
@@ -107,6 +107,12 @@ def main():
     save_users_to_csv(users)
     print(f"Saved {len(users)} users to users.csv")
 
+    uniq_users = len({user["login"]: user for user in users}.keys())   # Sanity check
+    print(f"Found {uniq_users} unique users")
+
+    total_expected_repos = sum(user["public_repos"] for user in users)
+    print(f"Expected to fetch {total_expected_repos} repositories...")
+
     print("Fetching repositories...")
     all_repositories = []
     for user in users:
@@ -116,6 +122,8 @@ def main():
 
     save_repositories_to_csv(all_repositories)
     print(f"Saved {len(all_repositories)} repositories to repositories.csv")
+
+    print('Repos pass sanity check:', total_expected_repos == len(all_repositories))
 
 if __name__ == "__main__":
     main()
